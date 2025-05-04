@@ -1,0 +1,11 @@
+#variaveis globais
+.data
+	hello: .ascii "Ola Mundo\n"
+	
+#codigo a ser implementado
+.text
+	li a7,4
+	la a0,hello
+	ecall
+				
+		

@@ -1,0 +1,36 @@
+#Somar dois numeros
+.data
+	pula: .asciz "\n"
+		
+.text
+	
+	#Lendo o numero 1
+	li a7, 5 #movendo pro registrador a7 a instrução da leitura de int
+	ecall
+	mv t0,a0 #armezando na variavel temporaria o resultado
+	
+	
+	#Lendo o numero 2
+	li a7, 5
+	ecall
+	mv t1,a0
+	
+	
+	#Soma
+	add t2,t0,t1 #somando dois numeros
+	
+	
+	
+	#Imprimir o valor da soma
+	li a7, 1 #1 e o valor do printInt
+	mv a0,t2
+	ecall
+	
+	#\n
+	li a7,4
+	la a0, pula
+	ecall
+	
+	#encerrando o programa
+	li a7,10
+	ecall

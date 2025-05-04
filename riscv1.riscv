@@ -1,0 +1,13 @@
+#variaveis globais
+.data
+	hello: .asciz "Hello World"
+	
+#codigo a ser implementado
+.text
+	.global_start
+_start:
+	li a7,4
+	la a0,hello
+	ecall
+				
+		

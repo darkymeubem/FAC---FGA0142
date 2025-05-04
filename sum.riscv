@@ -1,0 +1,37 @@
+#Somar dois numeros
+
+.data
+	input1: .asciz "Primeiro numero: "
+	input2: .asciz "Segundo numero: "
+	res: .asciz "Resultado: "
+.text
+	li a7,4
+	la a0, input1
+	ecall
+	
+	#Lendo o numero 1
+	li a7, 5
+	ecall
+	mv t0,a0
+	
+	li a7,4
+	la a0, input2
+	ecall
+	
+	#Lendo o numero 2
+	li a7, 5
+	ecall
+	mv t1,a0
+	
+	
+	#Soma
+	add t2,t0,t1
+	li a7,4
+	la a0, res
+	ecall
+	
+	#Imprimir o valor da soma
+	li a7, 1
+	mv a0,t2
+	ecall
+	
