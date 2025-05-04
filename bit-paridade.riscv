@@ -1,0 +1,69 @@
+.data
+    linha:         .asciz "\n"
+    msg_paridade:  .asciz "bit-paridade: "
+    msg_saida:     .asciz "\nsaida: "
+    msg_erro:      .asciz "entrada incorreta\n"
+
+.text
+    main:
+        # Leitura da entrada
+        li  a7, 5
+        ecall
+        mv  t0, a0
+mv t5,t0
+
+
+        # Verificação do intervalo (0 <= N < 128)
+        li  t1, 128
+        bge a0, t1, erro
+
+        # Contagem de bits
+        li  t2, 0
+        contador_bits:
+            andi t3, t0, 1
+            add  t2, t2, t3
+            srli t0, t0, 1
+            bnez t0, contador_bits
+#verificar a paridade: se é par ou nao
+#entao analisar isto
+andi t2,t2,1 #criei uma mascara pra sobrar apenas o bit menos significativo (t1 % 2)
+
+
+ # Impressão da paridade
+       li  a7, 4
+       la  a0, msg_paridade
+       ecall
+       mv  a0, t2
+       addi a0, a0, '0'  # Convertemos o contador para caractere ASCII
+       li  a7, 11
+       ecall
+
+        # Cálculo do novo número com bit de paridade
+       #Calcular o novo numero (N com bit de paridade)
+slli t2,t2, 7 #estou descolocando aqui o bit de paridade (t1) para a posição 7 e aramazenando em a0
+or t5, t5,t2 #estou colocando o bit de paridade e juntando com o numero original (t5)
+       
+
+        # Impressão da saída
+        la  a0, msg_saida
+        li  a7, 4
+        ecall
+        mv  a0,t5
+        li  a7, 1
+        ecall
+
+        # Nova linha
+        la  a0, linha
+        li  a7, 4
+        ecall
+
+        # Finaliza o programa
+        li  a7, 10
+        ecall
+
+    erro:
+        la  a0, msg_erro
+        li  a7, 4
+        ecall
+        li  a7, 10
+        ecall

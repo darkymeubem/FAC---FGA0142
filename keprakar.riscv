@@ -1,0 +1,328 @@
+.data
+    array: .word 0, 0 , 0, 0 # Exemplo de array de inteiros
+    n: .word 4                     # Número de elementos no array
+    array_asc: .space 16             # Aloca espaço para 6 inteiros (6 * 4 bytes)
+    array_desc: .space 16            # Aloca espaço para 6 inteiros (6 * 4 bytes)
+    msgEntradaInvalida: .asciz "entrada invalida.\n"
+    n_desc: .word 4
+    n_asc: .word 4
+    passos: .word 0
+    n_comp: .word 0
+ 
+
+
+
+.text
+    .globl main
+main:
+    li a7,5
+    ecall
+    mv t0,a0
+
+    la t3, n_comp      # Carregar o endereço de n_comp
+    sw t0, 0(t3)       # Salvar t0 em n_comp
+    li t2,0
+
+
+    #Verifica se o numero é natural
+    blt t0,t2,entrada_invalida	# t0 < 0	
+
+    # Verificar se o número tem 4 dígitos
+    li t1, 1000          # t1 = 1000
+    blt t0, t1, entrada_invalida  # Se t0 < 1000, invalidar a entrada
+    li t1, 9999
+    bgt t0, t1, entrada_invalida  # Se t0 > 9999, invalidar a entrada
+
+    
+    li t3, 10           # Divisão por 10 para extrair os dígitos
+
+la s0,array
+# Extração dos dígitos (sem alterações significativas)
+    rem t2, t0, t3
+    div t0, t0, t3
+    andi t2, t2, 0xF
+    sw t2, 12(s0)
+
+    rem t2, t0, t3
+    div t0, t0, t3
+    andi t2, t2, 0xF
+    sw t2, 8(s0)
+
+    rem t2, t0, t3
+    div t0, t0, t3
+    andi t2, t2, 0xF
+    sw t2, 4(s0)
+
+    rem t2, t0, t3
+    div t0, t0, t3
+    andi t2, t2, 0xF
+    sw t2, 0(s0)
+ 
+ 
+
+digitos_equal:
+    la s0,array
+    # Carregar os dígitos do array para comparação
+    lw t1, 0(s0)      # Carrega o primeiro dígito
+    lw t2, 4(s0)      # Carrega o segundo dígito
+    lw t3, 8(s0)      # Carrega o terceiro dígito
+    lw t4, 12(s0)     # Carrega o quarto dígito
+
+    # Comparar os dígitos
+    bne t1, t2, loop_keprakar    # Se t1 != t2, não são iguais
+    bne t1, t3, loop_keprakar   # Se t1 != t3, não são iguais
+    bne t1, t4, loop_keprakar  # Se t1 != t4, não são iguais
+
+    # Todos os dígitos são iguais
+    j entrada_invalida      
+         
+
+loop_keprakar:
+ 
+    mv s1, t0        # 1. Salva o valor *original* de t0 (para impressão)
+    
+
+    lw t0, n_comp # Carrega o valor atual para processamento
+
+
+    li t3, 10
+    li t2, 0
+    la s0, array
+
+    # Extração dos dígitos (sem alterações significativas)
+    rem t2, t0, t3
+    div t0, t0, t3
+    andi t2, t2, 0xF
+    sw t2, 12(s0)
+
+    rem t2, t0, t3
+    div t0, t0, t3
+    andi t2, t2, 0xF
+    sw t2, 8(s0)
+
+    rem t2, t0, t3
+    div t0, t0, t3
+    andi t2, t2, 0xF
+    sw t2, 4(s0)
+
+    beqz t0, zero_digit
+    rem t2, t0, t3
+    div t0, t0, t3
+    andi t2, t2, 0xF
+    sw t2, 0(s0)
+    j continua
+
+zero_digit:
+    li t2, 0
+    sw t2, 0(s0)
+
+continua:
+
+    jal copy_array           # Copia os dados para outro array, talvez?
+    
+    # Ordenar de forma crescente
+    li a0, 0                 # Argumento 0 para indicar crescente
+    jal sort_asc             # Chama a função de ordenação crescente
+    jal monta_asc            # Monta os resultados ordenados crescentemente
+   
+    # Ordenar de forma decrescente
+    li a0, 1                 # Argumento 0 para indicar decrescente    
+    jal sort_desc            # Chama a função de ordenação decrescente
+    jal monta_desc           # Monta os resultados ordenados decrescentemente
+
+    # Diferença
+    lw t3, n_desc
+    lw t2, n_asc
+    sub s2, t3, t2   # Calcula a diferença e *salva em s2*
+
+    # Incrementar o valor de passos
+    la t3, passos            # Carrega o endereço de passos para t3
+    lw a1, 0(t3)             # Carrega o valor atual de passos para a1
+    addi a1, a1, 1           # Incrementa a1 em 1
+    sw a1, 0(t3)             # Salva o valor atualizado de a1 em passos
+
+    la t1, n_comp
+    sw s2, 0(t1)       # Atualiza n_comp com o *resultado* (s2)
+
+    mv t0, s2       # Move o *resultado* (s2) para t0 para a próxima iteração
+    li t6,6174
+   
+    bne t0, t6, loop_keprakar # Se t0 != 6174, reinicia o loop
+    j done
+
+
+     
+copy_array:
+    # Inicialização
+    la t0, array          # Carrega o endereço base do array original
+    la t2, array_asc      # Carrega o endereço de array_asc
+    la t3, array_desc     # Carrega o endereço de array_desc
+    li t4, 0              # Inicializa o contador de elementos copiados
+
+copy_loop:
+    lw t5, 0(t0)          # Carrega o elemento atual do array original
+    sw t5, 0(t2)          # Copia para array_asc
+    sw t5, 0(t3)          # Copia para array_desc
+
+    # Avançar para o próximo elemento
+    addi t0, t0, 4        # Avança o ponteiro do array original
+    addi t2, t2, 4        # Avança o ponteiro de array_asc
+    addi t3, t3, 4        # Avança o ponteiro de array_desc
+    addi t4, t4, 1        # Incrementa o contador de elementos copiados
+
+    # Verificar se todos os elementos foram copiados
+    lw t6, n              # Carrega o número total de elementos (n)
+    bne t4, t6, copy_loop # Continua se ainda não terminou
+
+    jr ra                 # Retorna para a função chamadora
+
+               
+    
+
+sort_asc:
+    la t0, array_asc      # Carregar o endereço de array_asc em t0
+    lw t1, n              # Carregar o número de elementos no array em t1
+    addi t1, t1, -1      # t1 = tamanho do array - 1 (n - 1)
+
+outer_loop_asc:
+    li t2, 0              # Inicializa a flag de troca (t2 = 0, sem trocas)
+    li t3, 0              # Inicializa o índice i para o loop interno
+    la t0, array_asc      # Reinicia o ponteiro para o início do array
+
+inner_loop_asc:
+    # Carregar os elementos adjacentes
+    lw t4, 0(t0)          # t4 = array_asc[i]
+    lw t5, 4(t0)          # t5 = array_asc[i+1]
+
+    # Comparar os elementos e trocar, se necessário
+    bgt t4, t5, swap_asc  # Se t4 > t5, vá para "swap_asc"
+    j no_swap_asc
+
+swap_asc:
+    # Trocar os elementos t4 e t5
+    sw t5, 0(t0)          # array_asc[i] = t5
+    sw t4, 4(t0)          # array_asc[i+1] = t4
+    li t2, 1              # Define a flag indicando que houve troca
+
+no_swap_asc:
+    addi t3, t3, 1      # Incrementa o índice i
+    addi t0, t0, 4      # Avança o ponteiro para o próximo par
+    blt t3, t1, inner_loop_asc  # Condição Corrigida: blt em vez de bne
+
+    # Após o loop interno, verificar a flag de troca
+    beq t2, zero, done_asc # Se não houve troca, o array está ordenado
+
+    # Atualizar o limite do próximo loop (diminuir o tamanho efetivo do array)
+    addi t1, t1, -1      # t1 = t1 - 1
+    j outer_loop_asc      # Repetir o loop externo
+
+done_asc:
+    jr ra              # Retorna ao ponto de chamada
+    
+monta_asc:
+    li t2, 0               # Inicializa o número resultante como 0
+    li t3, 0               # Inicializa o índice (contador) como 0
+    lw t1, n               # Carregar o número total de elementos (n) em t1
+    la t0, array_asc       # Carregar o endereço do array_asc
+    li t5, 10              # Base de multiplicação (10)
+
+remontar_loop_asc:
+    lw t4, 0(t0)           # Carregar o próximo dígito de array_asc
+    mul t2, t2, t5         # Multiplicar o número acumulado por 10
+    add t2, t2, t4         # Adicionar o dígito atual ao número acumulado
+    addi t0, t0, 4         # Avançar para o próximo dígito no array
+    addi t3, t3, 1         # Incrementar o índice
+    bne t3, t1, remontar_loop_asc # Se não tiver processado todos os dígitos, continuar
+    
+    # Salvar o resultado em memória
+    la t0, n_asc           # Carregar o endereço do resultado (n_asc)
+    sw t2, 0(t0)           # Armazenar o número resultante no espaço reservado
+    
+
+
+    jr ra                  # Retorna ao ponto de chamada
+    
+
+
+sort_desc:
+    la t0, array_desc      # Carregar o endereço de array_desc em t0
+    lw t1, n              # Carregar o número de elementos no array em t1
+    addi t1, t1, -1      # t1 = tamanho do array - 1 (n - 1)
+
+outer_loop_desc:
+    li t2, 0              # Inicializa a flag de troca (t2 = 0, sem trocas)
+    li t3, 0              # Inicializa o índice i para o loop interno
+    la t0, array_desc      # Reinicia o ponteiro para o início do array
+
+inner_loop_desc:
+    # Carregar os elementos adjacentes do array
+    lw t4, 0(t0)          # t4 = array_desc[i]
+    lw t5, 4(t0)          # t5 = array_desc[i+1]
+
+    # Comparar os elementos e trocar, se necessário
+    blt t4, t5, swap_desc # Se t4 < t5, vá para "swap_desc"
+    j no_swap_desc
+
+swap_desc:
+    # Trocar os elementos t4 e t5
+    sw t5, 0(t0)          # array_desc[i] = t5
+    sw t4, 4(t0)          # array_desc[i+1] = t4
+    li t2, 1              # Define a flag indicando que houve troca
+
+no_swap_desc:
+    addi t3, t3, 1      # Incrementa o índice i
+    addi t0, t0, 4      # Avança o ponteiro para o próximo par
+    blt t3, t1, inner_loop_desc # Condição Corrigida: blt em vez de bne
+
+    # Após o loop interno, verificar a flag de troca
+    beq t2, zero, done_desc # Se não houve troca, o array está ordenado
+
+    # Atualizar o limite do próximo loop (diminuir o tamanho efetivo do array)
+    addi t1, t1, -1      # t1 = t1 - 1
+    j outer_loop_desc      # Repetir o loop externo
+
+done_desc:
+    jr ra              # Retorna ao ponto de chamada
+
+    
+
+monta_desc:
+    li t2, 0               # Inicializa o número resultante como 0
+    li t3, 0               # Inicializa o índice (contador) como 0
+    lw t1, n               # Carregar o número total de elementos (n) em t1
+    la t0, array_desc      # Carregar o endereço do array_desc
+    li t5, 10              # Base de multiplicação (10)
+
+remontar_loop_desc:
+    lw t4, 0(t0)           # Carregar o próximo dígito de array_desc
+    mul t2, t2, t5         # Multiplicar o número acumulado por 10
+    add t2, t2, t4         # Adicionar o dígito atual ao número acumulado
+    addi t0, t0, 4         # Avançar para o próximo dígito no array
+    addi t3, t3, 1         # Incrementar o índice
+    bne t3, t1, remontar_loop_desc # Se não tiver processado todos os dígitos, continuar
+
+    # Salvar o resultado em memória
+    la t0, n_desc          # Carregar o endereço de resultado (n_desc)
+    sw t2, 0(t0)           # Armazena o número resultante no espaço reservado
+
+
+    jr ra                  # Retorna ao ponto de chamada
+
+
+entrada_invalida:
+    li a7, 4             # Exibir mensagem de erro
+    la a0, msgEntradaInvalida
+    ecall
+    li a7, 10            # Finalizar
+    ecall
+    
+done:
+	
+
+ 	lw a1 ,0(t3)
+ 	li a7,1
+ 	mv a0,a1
+ 	ecall
+ 	
+	li a7,10
+	ecall

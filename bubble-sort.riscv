@@ -1,0 +1,204 @@
+.data
+    array: .word 5, 3, 8, 6, 2, 7   # Exemplo de array de inteiros
+    n: .word 6                      # Número de elementos no array
+    array_asc: .space 24             # Aloca espaço para 6 inteiros (6 * 4 bytes)
+    array_desc: .space 24            # Aloca espaço para 6 inteiros (6 * 4 bytes)
+    msgAsc: .asciz "Array ordenado de forma crescente: "
+    msgDesc: .asciz "\nArray ordenado de forma decrescente: "
+    newLine: .asciz "\nNumero crescente formado\n"
+    n_desc: .word 6
+    n_asc: .word 6
+
+.text
+    .globl main
+main:
+    la t0, array           # Carregar o endereço do array original em t0
+    lw t1, n               # Carregar o número de elementos em t1
+
+    # Copiar os elementos para os arrays de ordenação (asc e desc)
+    la t2, array_asc       # Carregar o endereço de array_asc em t2
+    la t3, array_desc      # Carregar o endereço de array_desc em t3
+    li t4, 0               # Inicializar o índice i para a cópia
+
+copy_arrays:
+    lw t5, 0(t0)           # Carregar o elemento de array original
+    sw t5, 0(t2)           # Armazenar em array_asc
+    sw t5, 0(t3)           # Armazenar em array_desc
+    addi t0, t0, 4         # Avançar para o próximo elemento de array
+    addi t2, t2, 4         # Avançar para o próximo índice em array_asc
+    addi t3, t3, 4         # Avançar para o próximo índice em array_desc
+    addi t4, t4, 1         # Incrementar o contador de elementos copiados
+    lw t6, n               # Carregar número de elementos
+    bne t4, t6, copy_arrays  # Se ainda não copiou todos os elementos, continua
+
+    # Ordenar de forma crescente
+    li a0, 0               # Argumento 0 para indicar crescente
+    jal sort_asc           # Chama a função de ordenação crescente
+    jal monta_asc
+    
+    #Chamar o numero todin
+    li a7,1
+    mv a0,t2
+    ecall
+    
+     # Exibir mensagem e imprimir array_asc (ordenado crescentemente)
+    li a7, 4               # System call para printar string
+    la a0, newLine          # Carregar mensagem para ordenação crescente
+    ecall
+
+    # Exibir mensagem e imprimir array_asc (ordenado crescentemente)
+    li a7, 4               # System call para printar string
+    la a0, msgAsc          # Carregar mensagem para ordenação crescente
+    ecall
+
+    # Imprimir os elementos de array_asc
+    li t3, 0               # Inicializa o índice para percorrer o array_asc
+    la t0, array_asc       # Carregar o endereço de array_asc
+    lw t4, n               # Carregar o número de elementos (de n) no t4
+print_asc:
+    lw a0, 0(t0)           # Carregar o elemento de array_asc
+    li a7, 1               # System call para imprimir inteiro
+    ecall                  # Exibe o valor do array_asc[i]
+    addi t0, t0, 4         # Avança para o próximo elemento
+    addi t3, t3, 1         # Incrementa o índice
+    bne t3, t4, print_asc  # Se não tiver imprimido todos os elementos, continua
+
+    # Ordenar de forma decrescente
+    li a0, 1               # Argumento 1 para indicar decrescente
+    jal sort_desc          # Chama a função de ordenação decrescente
+
+    # Exibir mensagem e imprimir array_desc (ordenado decrescentemente)
+    li a7, 4               # System call para printar string
+    la a0, msgDesc         # Carregar mensagem para ordenação decrescente
+    ecall
+
+    # Imprimir os elementos de array_desc
+    li t3, 0               # Inicializa o índice para percorrer o array_desc
+    la t0, array_desc      # Carregar o endereço de array_desc
+    lw t4, n               # Carregar o número de elementos (de n) no t4
+print_desc:
+    lw a0, 0(t0)           # Carregar o elemento de array_desc
+    li a7, 1               # System call para imprimir inteiro
+    ecall                  # Exibe o valor do array_desc[i]
+    addi t0, t0, 4         # Avança para o próximo elemento
+    addi t3, t3, 1         # Incrementa o índice
+    bne t3, t4, print_desc # Se não tiver imprimido todos os elementos, continua
+
+    # Finalizar o programa
+    li a7, 10              # System call para terminar
+    ecall
+
+# Função sort_asc: Ordena o array em ordem crescente (Bubble Sort)
+sort_asc:
+    la t0, array_asc       # Carregar o endereço de array_asc em t0
+    lw t1, n               # Carregar o número de elementos em t1
+    addi t1, t1, -1        # Decrease n by 1 (tamanho do array - 1)
+
+    # Loop externo (passada do Bubble Sort)
+    outer_loop_asc:
+        li t2, 0           # Inicializa a flag de troca (t2 = 0, sem trocas)
+        
+        # Loop interno (comparação de elementos adjacentes)
+        li t3, 0           # Inicializa o índice i para comparação
+        la t0, array_asc   # Reiniciar o ponteiro para o início do array a cada passada
+        inner_loop_asc:
+            # Carregar os elementos adjacentes do array
+            lw t4, 0(t0)    # t4 = array_asc[i]
+            lw t5, 4(t0)    # t5 = array_asc[i+1]
+            
+            # Comparar t4 (array_asc[i]) com t5 (array_asc[i+1])
+            bgt t4, t5, swap_asc  # Se t4 > t5, troque-os
+
+            # Não há troca necessária, ir para o próximo par
+            j no_swap_asc
+
+        swap_asc:
+            # Trocar os elementos t4 e t5
+            sw t5, 0(t0)    # array_asc[i] = t5
+            sw t4, 4(t0)    # array_asc[i+1] = t4
+
+            li t2, 1        # Indicar que ocorreu uma troca
+
+        no_swap_asc:
+            addi t3, t3, 1  # Incrementa o índice i
+            addi t0, t0, 4  # Avança para o próximo elemento do array (i+1)
+            bne t3, t1, inner_loop_asc  # Se i < n-1, continua comparando
+
+        # Verificar se ocorreu uma troca
+        # Se não houver troca, o array já está ordenado e podemos sair
+        beq t2, zero, done_asc
+        
+        # Se ocorreu troca, continuar o loop externo
+        j outer_loop_asc   # Repetir o loop externo
+
+done_asc:
+    jr ra                 # Retornar ao ponto de chamada
+    
+# Função monta_desc: Monta o número a partir do array array_desc
+monta_asc:
+    li t2, 0               # Inicializa o número resultante como 0
+    li t3, 0               # Inicializa o índice (contador) como 0
+    lw t1, n               # Carregar o número total de elementos (n) em t1
+    la t0, array_asc      # Carregar o endereço do array (em t0)
+    li t5, 10
+    j remontar_loop_asc
+
+remontar_loop_asc:
+    lw t4, 0(t0)           # Carregar o próximo dígito de array_desc
+    add t2, t2, t4         # Adicionar o dígito atual ao número resultante
+    mul t2, t2, t5         # Multiplicar o número resultante por 10
+    addi t0, t0, 4         # Avançar para o próximo dígito no array (array_desc)
+    addi t3, t3, 1         # Incrementar o índice
+    bne t3, t1, remontar_loop_asc # Se não tiver processado todos os dígitos, continuar
+    
+    div t2, t2, t5         # Dividir por 10 para corrigir a multiplicação extra
+    # Salva o resultado em memória
+    la t0, n_asc          # Carrega o endereço de resultado
+    sw t2, 0(t0)           # Armazena o número resultante no espaço reservado
+    jr ra      
+
+# Função sort_desc: Ordena o array em ordem decrescente (Bubble Sort)
+sort_desc:
+    la t0, array_desc     # Carregar o endereço de array_desc em t0
+    lw t1, n               # Carregar o número de elementos em t1
+    addi t1, t1, -1        # Decrease n by 1 (tamanho do array - 1)
+
+    # Loop externo (passada do Bubble Sort)
+    outer_loop_desc:
+        li t2, 0           # Inicializa a flag de troca (t2 = 0, sem trocas)
+        
+        # Loop interno (comparação de elementos adjacentes)
+        li t3, 0           # Inicializa o índice i para comparação
+        la t0, array_desc  # Reiniciar o ponteiro para o início do array a cada passada
+        inner_loop_desc:
+            # Carregar os elementos adjacentes do array
+            lw t4, 0(t0)    # t4 = array_desc[i]
+            lw t5, 4(t0)    # t5 = array_desc[i+1]
+            
+            # Comparar t4 (array_desc[i]) com t5 (array_desc[i+1])
+            blt t4, t5, swap_desc  # Se t4 < t5, troque-os
+
+            # Não há troca necessária, ir para o próximo par
+            j no_swap_desc
+
+        swap_desc:
+            # Trocar os elementos t4 e t5
+            sw t5, 0(t0)    # array_desc[i] = t5
+            sw t4, 4(t0)    # array_desc[i+1] = t4
+
+            li t2, 1        # Indicar que ocorreu uma troca
+
+        no_swap_desc:
+            addi t3, t3, 1  # Incrementa o índice i
+            addi t0, t0, 4  # Avança para o próximo elemento do array (i+1)
+            bne t3, t1, inner_loop_desc  # Se i < n-1, continua comparando
+
+        # Verificar se ocorreu uma troca
+        # Se não houver troca, o array já está ordenado e podemos sair
+        beq t2, zero, done_desc
+        
+        # Se ocorreu troca, continuar o loop externo
+        j outer_loop_desc   # Repetir o loop externo
+
+done_desc:
+    jr ra                 # Retornar ao ponto de chamada

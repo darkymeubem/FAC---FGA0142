@@ -1,0 +1,78 @@
+
+.data
+	in_string: .space 33 #contando o \0
+	hex_saida:   .space 65  # Espaço para saída (64 + '\0')
+	hex_digits: .asciz "0123456789ABCDEF"
+	newline: .asciz "\n"
+	
+.text
+	la a0,in_string
+	li a7,8
+	li a1,33
+	ecall
+	
+	
+	# Remove \n
+    la t0, in_string
+remove_newline:
+    lb t1, 0(t0)
+    beqz t1, start_convert
+    li t2, 0x0A
+    beq t1, t2, found_newline
+    addi t0, t0, 1
+    j remove_newline
+found_newline:
+    sb zero, 0(t0)
+	
+start_convert:
+	#Loop pra hexadecimal
+	la t0, in_string
+	la t1, hex_saida
+	
+convert_hexadecimal:
+	lb t2, 0(t0)
+	beqz t2, print_hex #se chegar no \0
+	
+	#mascara para obter MSB   --> porque uma string contem 8bits, cada caractere na tabela ASCII
+	srli  t3,t2,4
+	andi  t3, t3, 0xF
+    	la t4, hex_digits
+	add t4,t4,t3
+	lb t5, 0(t4)
+	sb t5, 0(t1)	
+	
+	
+	#mascara para obter LSB
+	andi t3, t2, 0xF
+	la t4, hex_digits
+	add t4, t4, t3
+	lb t5, 0(t4)
+	sb t5, 1(t1)
+	
+	addi t0,t0,1
+	addi t1,t1,2
+	
+	j convert_hexadecimal
+	
+		
+				
+print_hex:
+    	sb    zero, 0(t1)            # Adicionar o terminador nulo à string de saída
+	#Print newLune
+	la a0, newline
+	li a7,4
+	ecall
+	
+    	# Exibir a string em hexadecimal
+    	 la    a0, hex_saida         # Endereço da string hexadecimal
+   	 li    a7, 4                  # Chamada de syscall print_string
+   	 ecall
+
+	#Print newLune
+	la a0, newline
+	li a7,4
+	ecall
+
+
+	li a7,10
+	ecall

@@ -1,0 +1,36 @@
+.data
+buffer:   .space 10            # Espaço para armazenar a entrada do usuário
+msg_input:  .asciz "Digite um número natural de 4 dígitos: "
+msg_invalid: .asciz "entrada invalida.\n"
+msg_steps:  .asciz "Número de passos: "
+kaprekar:   .word 6174         # Constante de Kaprekar
+
+.text
+main:
+
+        # Ler o número digitado pelo usuário
+    li a7, 5          # Código de syscall para leitura de inteiro
+    ecall
+
+    mv t0, a0         # Armazena o número original em t0
+    li t1, 0          # t1 armazenará o número invertido (inicializado como 0)
+    li t3, 10         # t3 é usado para divisão por 10 (usado em rem e div)
+    
+	
+reverte:
+    rem t2, a0, t3    # Pega o último dígito de a0 e coloca em t2
+    add t1, t1, t2    # Adiciona o dígito extraído ao número invertido (t1)
+    mul t1, t1, t3    # Multiplica o número invertido por 10 para deslocar os dígitos
+    div a0, a0, t3    # Remove o último dígito de a0
+    bnez a0, reverte  # Se a0 não for zero, repete o processo
+div t1,t1,t3
+    # Exibe o número invertido
+    mv a0, t1         # Move o número invertido para a0
+    li a7, 1          # Código de syscall para exibir inteiro
+    ecall
+li t4,0 #passos
+bge t1,t0 #t1 >= t0
+
+loop_kaprekar:
+	
+	

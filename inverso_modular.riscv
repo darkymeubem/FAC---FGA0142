@@ -1,0 +1,115 @@
+.data
+msg_erro: .asciz "Entradas invalidas\n"
+msg_nao_primo: .asciz "O modulo nao eh primo\n"
+msg_inverso: .asciz "inverso = "
+linha: .asciz "\n"
+
+.text
+main:
+    # Ler p e a
+    li a7, 5              # Código de syscall para ler inteiro
+    ecall                 # Chama syscall, resultado em a0
+    mv s0, a0             # Guarda p em s0
+
+    li a7, 5
+    ecall
+    mv s1, a0             # Guarda a em s1
+
+    # Verificar se p e a são maiores que 1
+    li t0, 1
+    ble s0, t0, erro
+    ble s1, t0, erro   
+
+    # Verificar se p é primo
+    jal e_primo         # Chama função para verificar primalidade
+    beq a0, zero, nao_primo  # Se não for primo, erro
+
+    # Verificar se a e p são coprimos (a % p != 0)
+    rem t1, s1, s0
+    beqz t1, erro      # Se a é múltiplo de p, erro
+
+    # Calcular o inverso modular de a mod p
+    jal calcular_inverso
+    la a0, msg_inverso
+    li a7, 4
+    ecall
+
+    # Imprimir o resultado
+    mv a0, a1
+    li a7, 1
+    ecall
+
+    # Imprimir nova linha
+    la a0, linha
+    li a7, 4
+    ecall
+
+    j end
+
+# Função para verificar se p é primo
+e_primo:
+    li a0, 1              # Assume que p é primo
+    li t1, 2
+checar_primo_loop:
+    mul t2, t1, t1        # t2 = t1 * t1
+    bgt t2, s0, fim_primo_checar  # Se t1^2 > p, sai
+    rem t3, s0, t1        # Calcula p % t1
+    beqz t3, nao_eprimo  # Se divisível, não é primo
+    addi t1, t1, 1
+    j checar_primo_loop
+
+nao_eprimo:
+    li a0, 0              # Marca como não primo
+fim_primo_checar:
+    ret
+
+calcular_inverso:
+    mv a1, s1       # a1 = a
+    mv a2, s0       # a2 = p
+    li t0, 1        # t0 = x (inicializa o coeficiente de a)
+    li t1, 0        # t1 = y (inicializa o coeficiente de p)
+
+loop_inverso:
+    beqz a2, inverso_feito # Se a2 == 0, fim
+    div t4, a1, a2    # t4 = a1 // a2 (quociente)
+    rem t5, a1, a2    # t5 = a1 % a2 (resto)
+
+    # Atualiza os coeficientes
+    mul t6, t4, t1    # t6 = t4 * t1 (coeficiente de p)
+    sub t2, t0, t6    # t2 = t0 - t6 (coeficiente de a)
+
+    # Passa os valores
+    mv t0, t1
+    mv t1, t2
+    mv a1, a2
+    mv a2, t5
+    j loop_inverso
+
+inverso_feito:
+    bltz t0, ajuste_inverso # Se t0 < 0, ajusta
+
+    mv a1, t0       # Salva o inverso calculado em a1
+    ret
+
+ajuste_inverso:
+    add t0, t0, s0 # Adiciona p a t0
+    bltz t0, ajuste_inverso # Repete até t0 >= 0
+    mv a1, t0       # Salva o inverso calculado em a1
+    ret
+
+# Mensagens de erro
+erro:
+    la a0, msg_erro
+    li a7, 4
+    ecall
+    j end
+
+nao_primo:
+    la a0, msg_nao_primo
+    li a7, 4
+    ecall
+    j end
+
+end:
+    li a7, 10             # Finalizar programa
+    ecall
